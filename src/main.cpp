@@ -1,33 +1,49 @@
 #include <Arduino.h>
 
-// Definição dos pinos dos LEDs
-const int led1 = 2;
-const int led2 = 3;
-const int led3 = 4;
-const int led4 = 5;
+// Número de botões/LEDs
+const int num = 4;
+
+// Arrays de pinos
+int botoes[num] = {2, 3, 4, 5};
+int leds[num]   = {8, 9, 10, 11};
+
+// Estados
+bool estadoLED[num] = {false, false, false, false};
+bool ultimoEstadoBotao[num] = {HIGH, HIGH, HIGH, HIGH};
+
+// Debounce
+unsigned long ultimoTempo[num] = {0, 0, 0, 0};
+const unsigned long delayDebounce = 50;
 
 void setup() {
-  // Configurar os pinos como saída
-  pinMode(led1, OUTPUT);
-  pinMode(led2, OUTPUT);
-  pinMode(led3, OUTPUT);
-  pinMode(led4, OUTPUT);
+  for (int i = 0; i < num; i++) {
+    pinMode(botoes[i], INPUT_PULLUP);
+    pinMode(leds[i], OUTPUT);
+  }
 }
 
 void loop() {
-  // Liga todos os LEDs
-  digitalWrite(led1, HIGH);
-  digitalWrite(led2, HIGH);
-  digitalWrite(led3, HIGH);
-  digitalWrite(led4, HIGH);
+  for (int i = 0; i < num; i++) {
+    bool leitura = digitalRead(botoes[i]);
 
-  delay(1000); // espera 1 segundo
+    // Se mudou o estado, reset do tempo
+    if (leitura != ultimoEstadoBotao[i]) {
+      ultimoTempo[i] = millis();
+    }
 
-  // Desliga todos os LEDs
-  digitalWrite(led1, LOW);
-  digitalWrite(led2, LOW);
-  digitalWrite(led3, LOW);
-  digitalWrite(led4, LOW);
+    // Se passou tempo suficiente (debounce)
+    if ((millis() - ultimoTempo[i]) > delayDebounce) {
+      
+      // Se botão foi pressionado (HIGH → LOW)
+      if (ultimoEstadoBotao[i] == HIGH && leitura == LOW) {
+        estadoLED[i] = !estadoLED[i]; // alterna estado
+      }
+    }
 
-  delay(1000); // espera 1 segundo
+    // Atualiza estado anterior
+    ultimoEstadoBotao[i] = leitura;
+
+    // Atualiza LED
+    digitalWrite(leds[i], estadoLED[i] ? HIGH : LOW);
+  }
 }
